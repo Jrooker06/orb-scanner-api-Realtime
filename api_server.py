@@ -337,6 +337,26 @@ def get_volume(symbol):
         logger.error(f"Error in volume endpoint: {e}")
         return jsonify({'error': 'Internal server error'}), 500
 
+@app.route('/api/quote/<symbol>', methods=['GET'])
+@require_license
+def get_quote(symbol):
+    """Get current quote data for a symbol"""
+    try:
+        # Fetch quote data from Polygon
+        url = f"https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers/{symbol}/quote"
+        headers = {"Authorization": f"Bearer {POLYGON_API_KEY}"}
+        
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            return jsonify(data)
+        else:
+            return jsonify({'error': f'Polygon API error: {response.status_code}'}), response.status_code
+            
+    except Exception as e:
+        logger.error(f"Error fetching quote for {symbol}: {e}")
+        return jsonify({'error': str(e)}), 500
+
 # =============================================================================
 # FINNHUB API ENDPOINTS (User-provided API key)
 # =============================================================================
