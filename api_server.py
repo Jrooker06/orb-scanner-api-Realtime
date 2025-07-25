@@ -53,6 +53,7 @@ def validate_license_key(license_key):
 
 def rate_limit_check(license_key):
     """Check rate limiting for a license key"""
+    global request_counts
     current_time = time.time()
     window_start = current_time - RATE_LIMIT_WINDOW
     
