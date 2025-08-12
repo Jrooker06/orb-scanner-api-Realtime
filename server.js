@@ -1,7 +1,6 @@
 const express = require('express');
 const WebSocket = require('ws');
 const http = require('http');
-const https = require('https');
 
 const app = express();
 const server = http.createServer(app);
@@ -29,14 +28,25 @@ app.get('/', (req, res) => {
     });
 });
 
+// WebSocket endpoint - handle upgrade manually
+app.get('/ws', (req, res) => {
+    res.status(426).json({
+        error: 'WebSocket upgrade required',
+        message: 'This endpoint requires WebSocket connection'
+    });
+});
+
 // WebSocket server
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({ 
+    server,
+    path: '/ws'
+});
 
 // Store Polygon WebSocket connection
 let polygonWs = null;
 
 wss.on('connection', (ws, req) => {
-    console.log('Client connected');
+    console.log('Client connected to WebSocket');
     
     // Connect to Polygon WebSocket if not already connected
     if (!polygonWs) {
@@ -108,6 +118,17 @@ wss.on('connection', (ws, req) => {
     ws.on('error', (error) => {
         console.error('Client WebSocket error:', error);
     });
+});
+
+// Handle WebSocket upgrade
+server.on('upgrade', (request, socket, head) => {
+    if (request.url === '/ws') {
+        wss.handleUpgrade(request, socket, head, (ws) => {
+            wss.emit('connection', ws, request);
+        });
+    } else {
+        socket.destroy();
+    }
 });
 
 // Start server
